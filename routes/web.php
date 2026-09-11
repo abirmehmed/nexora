@@ -37,3 +37,10 @@ use App\Http\Controllers\PostController;
 
 Route::resource('posts', PostController::class)->except(['show'])->middleware('auth');
 Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
+
+use App\Http\Controllers\CommentController;
+
+Route::middleware('auth')->group(function () {
+    Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+});
