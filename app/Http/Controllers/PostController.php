@@ -10,11 +10,12 @@ use Illuminate\View\View;
 
 class PostController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $posts = Post::with('user')->latest()->paginate(10);
+        $posts = Post::with(['user', 'likes'])->withCount('comments')->latest()->paginate(10);
+        $user = $request->user();
 
-        return view('posts.index', compact('posts'));
+        return view('posts.index', compact('posts', 'user'));
     }
 
     public function create(): View
@@ -34,11 +35,12 @@ class PostController extends Controller
         return redirect()->route('posts.index')->with('status', 'Post created successfully!');
     }
 
-    public function show(Post $post): View
+    public function show(Request $request, Post $post): View
     {
-        $post->load(['user', 'comments.user']);
+        $post->load(['user', 'comments.user', 'likes']);
+        $user = $request->user();
 
-        return view('posts.show', compact('post'));
+        return view('posts.show', compact('post', 'user'));
     }
 
     public function edit(Post $post): View

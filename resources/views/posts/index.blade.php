@@ -39,7 +39,30 @@
                                 </a>
                             </h3>
                             <p class="text-gray-700 mb-3">{{ Str::limit($post->body, 200) }}</p>
-                            <a href="{{ route('posts.show', $post) }}" class="text-indigo-600 hover:underline text-sm">Read more</a>
+                            
+                            <div class="flex items-center justify-between mt-3">
+                                <a href="{{ route('posts.show', $post) }}" class="text-indigo-600 hover:underline text-sm">Read more</a>
+                                
+                                <div class="flex items-center gap-4 text-sm text-gray-600">
+                                    <span>{{ $post->comments_count }} {{ Str::plural('comment', $post->comments_count) }}</span>
+                                    
+                                    <form method="post" action="{{ route('posts.like', $post) }}" class="inline">
+                                        @csrf
+                                        <button type="submit" class="flex items-center gap-1 hover:text-red-600 transition-colors">
+                                            @if($user && $user->hasLiked($post))
+                                                <svg class="w-5 h-5 text-red-600 fill-current" viewBox="0 0 20 20">
+                                                    <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/>
+                                                </svg>
+                                            @else
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                                </svg>
+                                            @endif
+                                            <span>{{ $post->likes->count() }}</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
                         </article>
                     @empty
                         <p class="text-gray-500">No posts yet.</p>

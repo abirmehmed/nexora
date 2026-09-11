@@ -33,16 +33,36 @@
                         <p class="text-gray-700 whitespace-pre-wrap">{{ $post->body }}</p>
                     </div>
 
-                    @if(auth()->id() === $post->user_id)
-                        <div class="flex gap-4 pt-4 border-t">
-                            <a href="{{ route('posts.edit', $post) }}" class="text-indigo-600 hover:underline">Edit</a>
-                            <form method="post" action="{{ route('posts.destroy', $post) }}" class="inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:underline" onclick="return confirm('Are you sure?')">Delete</button>
-                            </form>
-                        </div>
-                    @endif
+                    <div class="flex items-center justify-between pt-4 border-t">
+                        <form method="post" action="{{ route('posts.like', $post) }}" class="inline">
+                            @csrf
+                            <button type="submit" class="flex items-center gap-2 hover:text-red-600 transition-colors">
+                                @if($user && $user->hasLiked($post))
+                                    <svg class="w-6 h-6 text-red-600 fill-current" viewBox="0 0 20 20">
+                                        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/>
+                                    </svg>
+                                    <span class="text-sm font-medium">Liked</span>
+                                @else
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                    </svg>
+                                    <span class="text-sm font-medium">Like</span>
+                                @endif
+                                <span class="text-sm text-gray-600">{{ $post->likes->count() }}</span>
+                            </button>
+                        </form>
+
+                        @if(auth()->id() === $post->user_id)
+                            <div class="flex gap-4">
+                                <a href="{{ route('posts.edit', $post) }}" class="text-indigo-600 hover:underline">Edit</a>
+                                <form method="post" action="{{ route('posts.destroy', $post) }}" class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:underline" onclick="return confirm('Are you sure?')">Delete</button>
+                                </form>
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
 

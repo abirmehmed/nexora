@@ -42,6 +42,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Post::class);
     }
 
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
     public function followers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'follows', 'following_id', 'follower_id')
@@ -66,6 +71,11 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withTimestamps();
     }
 
+    public function likes(): HasMany
+    {
+        return $this->hasMany(Like::class);
+    }
+
     public function isFollowing(User $user): bool
     {
         return $this->following()->where('following_id', $user->id)->exists();
@@ -79,5 +89,13 @@ class User extends Authenticatable implements MustVerifyEmail
     public function hasBlocked(User $user): bool
     {
         return $this->blocks()->where('blocked_id', $user->id)->exists();
+    }
+
+    public function hasLiked(Post $post): bool
+    {
+        return $this->likes()
+            ->where('likeable_id', $post->id)
+            ->where('likeable_type', Post::class)
+            ->exists();
     }
 }
