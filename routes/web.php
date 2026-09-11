@@ -30,3 +30,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/users/{user}/block', [BlockController::class, 'store'])->name('users.block');
     Route::delete('/users/{user}/block', [BlockController::class, 'destroy'])->name('users.unblock');
 });
+
+use App\Http\Controllers\PostController;
+
+Route::resource('posts', PostController::class)->except(['show'])->middleware('auth');
+Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
