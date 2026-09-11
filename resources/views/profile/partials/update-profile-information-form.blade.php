@@ -13,7 +13,7 @@
         @csrf
     </form>
 
-    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
+    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6" enctype="multipart/form-data">
         @csrf
         @method('patch')
 
@@ -45,6 +45,50 @@
                     @endif
                 </div>
             @endif
+        </div>
+
+        <hr class="my-6">
+
+        <div>
+            <x-input-label for="display_name" :value="__('Display Name')" />
+            <x-text-input id="display_name" name="display_name" type="text" class="mt-1 block w-full" :value="old('display_name', $user->display_name)" maxlength="50" />
+            <x-input-error class="mt-2" :messages="$errors->get('display_name')" />
+        </div>
+
+        <div>
+            <x-input-label for="bio" :value="__('Bio')" />
+            <textarea id="bio" name="bio" rows="3" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" maxlength="160">{{ old('bio', $user->bio) }}</textarea>
+            <x-input-error class="mt-2" :messages="$errors->get('bio')" />
+        </div>
+
+        <div>
+            <x-input-label for="location" :value="__('Location')" />
+            <x-text-input id="location" name="location" type="text" class="mt-1 block w-full" :value="old('location', $user->location)" maxlength="100" />
+            <x-input-error class="mt-2" :messages="$errors->get('location')" />
+        </div>
+
+        <div>
+            <x-input-label for="website" :value="__('Website')" />
+            <x-text-input id="website" name="website" type="url" class="mt-1 block w-full" :value="old('website', $user->website)" placeholder="https://example.com" />
+            <x-input-error class="mt-2" :messages="$errors->get('website')" />
+        </div>
+
+        <div>
+            <x-input-label for="avatar" :value="__('Avatar')" />
+            @if($user->avatar)
+                <img src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar" class="mt-2 w-20 h-20 rounded-full object-cover">
+            @endif
+            <input id="avatar" name="avatar" type="file" accept="image/*" class="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+            <x-input-error class="mt-2" :messages="$errors->get('avatar')" />
+        </div>
+
+        <div>
+            <x-input-label for="cover_image" :value="__('Cover Image')" />
+            @if($user->cover_image)
+                <img src="{{ asset('storage/' . $user->cover_image) }}" alt="Cover" class="mt-2 w-full h-32 object-cover rounded-md">
+            @endif
+            <input id="cover_image" name="cover_image" type="file" accept="image/*" class="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+            <x-input-error class="mt-2" :messages="$errors->get('cover_image')" />
         </div>
 
         <div class="flex items-center gap-4">

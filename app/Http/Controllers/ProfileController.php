@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
+use App\Actions\UpdateUserProfile;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,9 +12,15 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
+    public function show(string $username): View
+    {
+        $user = User::where('username', $username)->firstOrFail();
+
+        return view('profile.show', [
+            'user' => $user,
+        ]);
+    }
+
     public function edit(Request $request): View
     {
         return view('profile.edit', [
@@ -21,25 +28,37 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Update the user's profile information.
-     */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(Request $request, UpdateUserProfile $action): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'display_name' => ['nullable', 'string', 'max:50'],
+            'bio' => ['nullable', 'string', 'max:160'],
+            'website' => ['nullable', 'url', 'max:255'],
+            'location' => ['nullable', 'string', 'max:100'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'cover_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+        ]);
+
+        if ($request->email !== $user->email) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->fill($validated);
+        $user->save();
+
+        $profileData = array_filter($validated, fn($k) => in_array($k, ['display_name', 'bio', 'website', 'location', 'avatar', 'cover_image']), ARRAY_FILTER_USE_KEY);
+        
+        if (!empty($profileData)) {
+            $action->execute($user, $profileData);
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
-    /**
-     * Delete the user's account.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [
@@ -47,9 +66,7 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
-
         Auth::logout();
-
         $user->delete();
 
         $request->session()->invalidate();
