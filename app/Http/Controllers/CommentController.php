@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use App\Models\Post;
+use App\Notifications\PostCommented;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -16,10 +17,15 @@ class CommentController extends Controller
             'body' => ['required', 'string', 'max:1000'],
         ]);
 
-        $post->comments()->create([
+        $comment = $post->comments()->create([
             'user_id' => $request->user()->id,
             'body' => $validated['body'],
         ]);
+
+        // Notify post author (don't notify yourself)
+        if ($post->user_id !== $request->user()->id) {
+            $post->user->notify(new PostCommented($request->user(), $post));
+        }
 
         return back()->with('status', 'Comment posted!');
     }

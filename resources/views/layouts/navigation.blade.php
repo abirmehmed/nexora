@@ -1,4 +1,4 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
+<nav x-data="{ open: false, notifOpen: false }" class="bg-white border-b border-gray-100">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -21,8 +21,48 @@
                 </div>
             </div>
 
-            <!-- Settings Dropdown -->
+            <!-- Settings Dropdown & Notifications -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <!-- Notifications Bell -->
+                <div class="relative mr-4">
+                    <button @click="notifOpen = !notifOpen" class="relative p-2 text-gray-500 hover:text-gray-700 focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                        </svg>
+                        @if(auth()->user()->unreadNotifications->count() > 0)
+                            <span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                                {{ auth()->user()->unreadNotifications->count() }}
+                            </span>
+                        @endif
+                    </button>
+
+                    <!-- Notification Dropdown -->
+                    <div x-show="notifOpen" @click.away="notifOpen = false" x-cloak class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50 max-h-96 overflow-y-auto">
+                        <div class="py-2">
+                            <div class="px-4 py-2 border-b border-gray-200">
+                                <h3 class="text-sm font-semibold text-gray-900">Notifications</h3>
+                            </div>
+                            @forelse(auth()->user()->notifications()->latest()->take(5)->get() as $notification)
+                                <a href="{{ $notification->data['url'] }}" class="block px-4 py-3 hover:bg-gray-50 {{ is_null($notification->read_at) ? 'bg-blue-50' : '' }}">
+                                    <p class="text-sm text-gray-900 {{ is_null($notification->read_at) ? 'font-semibold' : '' }}">
+                                        {{ $notification->data['message'] }}
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+                                </a>
+                            @empty
+                                <div class="px-4 py-6 text-center text-sm text-gray-500">
+                                    No notifications
+                                </div>
+                            @endforelse
+                            <div class="border-t border-gray-200">
+                                <a href="{{ route('notifications.index') }}" class="block px-4 py-2 text-sm text-indigo-600 hover:bg-gray-50 text-center">
+                                    View all notifications
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
@@ -70,8 +110,19 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('feed')" :active="request()->routeIs('feed')">
+                {{ __('Feed') }}
+            </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
+                {{ __('Notifications') }}
+                @if(auth()->user()->unreadNotifications->count() > 0)
+                    <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                        {{ auth()->user()->unreadNotifications->count() }}
+                    </span>
+                @endif
             </x-responsive-nav-link>
         </div>
 
