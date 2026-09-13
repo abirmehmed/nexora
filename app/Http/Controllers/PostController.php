@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Notifications\UserMentioned;
+use App\Services\TagParser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -12,7 +14,7 @@ class PostController extends Controller
 {
     public function index(Request $request): View
     {
-        $posts = Post::with(['user', 'likes'])->withCount('comments')->latest()->paginate(10);
+        $posts = Post::with(['user', 'likes', 'tags'])->withCount('comments')->latest()->paginate(10);
         $user = $request->user();
 
         return view('posts.index', compact('posts', 'user'));
@@ -30,14 +32,26 @@ class PostController extends Controller
             'body' => ['required', 'string'],
         ]);
 
-        $request->user()->posts()->create($validated);
+        $post = $request->user()->posts()->create($validated);
+
+        // Sync hashtags
+        TagParser::syncTagsForPost($post, $validated['body']);
+
+        // Notify @mentions
+        $mentionedUsernames = TagParser::extractMentions($validated['body']);
+        foreach ($mentionedUsernames as $username) {
+            $mentionedUser = \App\Models\User::where('username', $username)->first();
+            if ($mentionedUser && $mentionedUser->id !== $request->user()->id) {
+                $mentionedUser->notify(new UserMentioned($request->user(), $post));
+            }
+        }
 
         return redirect()->route('posts.index')->with('status', 'Post created successfully!');
     }
 
     public function show(Request $request, Post $post): View
     {
-        $post->load(['user', 'comments.user', 'likes']);
+        $post->load(['user', 'comments.user', 'likes', 'tags']);
         $user = $request->user();
 
         return view('posts.show', compact('post', 'user'));
@@ -60,6 +74,9 @@ class PostController extends Controller
         ]);
 
         $post->update($validated);
+
+        // Re-sync tags on update
+        TagParser::syncTagsForPost($post, $validated['body']);
 
         return redirect()->route('posts.show', $post)->with('status', 'Post updated successfully!');
     }

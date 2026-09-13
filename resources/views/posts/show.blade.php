@@ -30,7 +30,7 @@
                     <h1 class="text-3xl font-bold mb-4">{{ $post->title }}</h1>
 
                     <div class="prose max-w-none mb-6">
-                        <p class="text-gray-700 whitespace-pre-wrap">{{ $post->body }}</p>
+                        <div class="prose prose-slate max-w-none text-gray-700">{!! AppServicesTagParser::renderBody(e($post->body)) !!}</div>
                     </div>
 
                     <div class="flex items-center justify-between pt-4 border-t">

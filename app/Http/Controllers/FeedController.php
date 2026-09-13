@@ -12,24 +12,23 @@ class FeedController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-
-        // Get IDs of users this user follows + their own ID
-        $followingIds = $user->following()->pluck('users.id')->toArray();
-        $followingIds[] = $user->id;
-
-        // Get posts from followed users and self, ordered by newest
-        $posts = Post::with('user')
-            ->whereIn('user_id', $followingIds)
+        
+        // Get IDs of people the user follows
+        $followingIds = $user->following()->pluck('users.id');
+        
+        // Get posts from followed users + own posts
+        $posts = Post::with(['user', 'likes'])
+            ->withCount('comments')
+            ->whereIn('user_id', $followingIds->merge([$user->id]))
             ->latest()
             ->paginate(10);
 
-        // Suggest users to follow (not following, not self)
-        $suggestedUsers = User::where('id', '!=', $user->id)
-            ->whereNotIn('id', $followingIds)
+        // Get suggested users (people you don't follow, excluding yourself)
+        $suggestedUsers = User::whereNotIn('id', $followingIds->merge([$user->id]))
             ->inRandomOrder()
-            ->limit(5)
+            ->take(5)
             ->get();
 
-        return view('feed.index', compact('posts', 'suggestedUsers'));
+        return view('feed', compact('posts', 'suggestedUsers'));
     }
 }
