@@ -2,7 +2,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            <!-- Left Sidebar (Navigation/Shortcuts - Optional Placeholder) -->
+            <!-- Left Sidebar -->
             <div class="hidden lg:block lg:col-span-3 space-y-6">
                 <div class="bg-white rounded-2xl shadow-soft p-6 sticky top-24">
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Menu</h3>
@@ -28,7 +28,7 @@
                 
                 <!-- Create Post Quick Input -->
                 <div class="bg-white rounded-2xl shadow-soft p-6">
-                    <form action="{{ route('posts.store') }}" method="POST">
+                    <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="flex gap-4">
                             <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-primary-400 to-fuchsia-400 flex items-center justify-center text-white font-bold shrink-0">
@@ -37,11 +37,21 @@
                             <div class="flex-1">
                                 <input type="text" name="title" placeholder="What's on your mind?" class="w-full text-lg font-semibold placeholder-gray-400 border-none focus:ring-0 p-0 bg-transparent" required>
                                 <textarea name="body" rows="2" placeholder="Share your thoughts..." class="w-full mt-2 text-gray-600 placeholder-gray-400 border-none focus:ring-0 p-0 bg-transparent resize-none" required></textarea>
+                                
+                                <!-- Image Preview Area -->
+                                <div id="image-preview-container" class="hidden mt-4 relative">
+                                    <img id="image-preview" src="" alt="Preview" class="w-full h-64 object-cover rounded-xl">
+                                    <button type="button" id="remove-image" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+
                                 <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
                                     <div class="flex gap-2">
-                                        <button type="button" class="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors">
+                                        <label for="image-upload" class="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors cursor-pointer">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                        </button>
+                                            <input type="file" name="image" id="image-upload" accept="image/*" class="hidden">
+                                        </label>
                                         <button type="button" class="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
                                         </button>
@@ -92,22 +102,32 @@
                             </h2>
                             
                             <div class="prose prose-slate max-w-none text-gray-600 mb-4">
-                                <p>{!! AppServicesTagParser::renderBody(e(Str::limit($post->body, 280))) !!}</p>
+                                <p>{!! \App\Services\TagParser::renderBody(e($post->body)) !!}</p>
                             </div>
-                        @if($post->tags->count() > 0)
-                            <div class="flex flex-wrap gap-2 mt-3">
-                                @foreach($post->tags as $tag)
-                                    <a href="{{ route('tags.show', $tag->name) }}" class="px-3 py-1 bg-primary-50 text-primary-700 text-xs font-medium rounded-full hover:bg-primary-100 transition-colors">
-                                        #{{ $tag->name }}
+
+                            <!-- Display Image if exists -->
+                            @if($post->image)
+                                <div class="mb-4 rounded-xl overflow-hidden border border-gray-100">
+                                    <a href="{{ route('posts.show', $post) }}">
+                                        <img src="{{ Storage::url($post->image) }}" alt="{{ $post->title }}" class="w-full h-auto max-h-96 object-cover hover:scale-105 transition-transform duration-500">
                                     </a>
-                                @endforeach
-                            </div>
-                        @endif
+                                </div>
+                            @endif
+
+                            <!-- Tags -->
+                            @if($post->tags->count() > 0)
+                                <div class="flex flex-wrap gap-2 mt-3 mb-4">
+                                    @foreach($post->tags as $tag)
+                                        <a href="{{ route('tags.show', $tag->name) }}" class="px-3 py-1 bg-primary-50 text-primary-700 text-xs font-medium rounded-full hover:bg-primary-100 transition-colors">
+                                            #{{ $tag->name }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
 
                             <!-- Action Bar -->
                             <div class="flex items-center justify-between pt-4 border-t border-gray-100">
                                 <div class="flex items-center gap-6">
-                                    <!-- Like Button -->
                                     <form method="post" action="{{ route('posts.like', $post) }}" class="group">
                                         @csrf
                                         <button type="submit" class="flex items-center gap-2 text-gray-500 hover:text-pink-600 transition-colors">
@@ -122,7 +142,6 @@
                                         </button>
                                     </form>
 
-                                    <!-- Comment Button -->
                                     <a href="{{ route('posts.show', $post) }}" class="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors group">
                                         <div class="p-2 rounded-full group-hover:bg-blue-50 transition-colors">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
@@ -148,7 +167,7 @@
                 {{ $posts->links() }}
             </div>
 
-            <!-- Right Sidebar (Who to follow) -->
+            <!-- Right Sidebar -->
             <div class="hidden lg:block lg:col-span-3 space-y-6">
                 <div class="bg-white rounded-2xl shadow-soft p-6 sticky top-24">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">Who to follow</h3>
@@ -192,4 +211,24 @@
 
         </div>
     </div>
+
+    <!-- Alpine.js for Image Preview -->
+    <script>
+        document.getElementById('image-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('image-preview').src = e.target.result;
+                    document.getElementById('image-preview-container').classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('remove-image').addEventListener('click', function() {
+            document.getElementById('image-upload').value = '';
+            document.getElementById('image-preview-container').classList.add('hidden');
+        });
+    </script>
 </x-app-layout>

@@ -8,6 +8,7 @@ use App\Services\TagParser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class PostController extends Controller
@@ -30,9 +31,16 @@ class PostController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
         ]);
 
-        $post = $request->user()->posts()->create($validated);
+        $data = $request->only(['title', 'body']);
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('posts', 'public');
+        }
+
+        $post = $request->user()->posts()->create($data);
 
         // Sync hashtags
         TagParser::syncTagsForPost($post, $validated['body']);
@@ -71,9 +79,20 @@ class PostController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
         ]);
 
-        $post->update($validated);
+        $data = $request->only(['title', 'body']);
+
+        if ($request->hasFile('image')) {
+            // Delete old image if it exists
+            if ($post->image) {
+                Storage::disk('public')->delete($post->image);
+            }
+            $data['image'] = $request->file('image')->store('posts', 'public');
+        }
+
+        $post->update($data);
 
         // Re-sync tags on update
         TagParser::syncTagsForPost($post, $validated['body']);
@@ -84,6 +103,11 @@ class PostController extends Controller
     public function destroy(Post $post): RedirectResponse
     {
         Gate::authorize('delete', $post);
+
+        // Delete associated image
+        if ($post->image) {
+            Storage::disk('public')->delete($post->image);
+        }
 
         $post->delete();
 
