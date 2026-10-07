@@ -16,7 +16,7 @@ services:
         value: stderr
       - key: DB_CONNECTION
         value: pgsql
-  - type: postgres
+  - type: pserv
     name: nexora-db
     plan: free
     ipAllowList: []
