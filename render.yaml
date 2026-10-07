@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: nexora
+    env: php
+    plan: free
+    buildCommand: "composer install --no-dev --optimize-autoloader && npm install && npm run build"
+    startCommand: "php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && heroku-php-apache2 public/"
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        value: base64:FlS4JirE51CC7R+LQEwXHYDZQP1cXxnQWITW7mVsS2Y=
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: DB_CONNECTION
+        value: pgsql
+  - type: postgres
+    name: nexora-db
+    plan: free
+    ipAllowList: []
